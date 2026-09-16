@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+@theme {
+  /* SocialFlow — paleta neutra e simples */
+  --color-paper: #f7f6f2;
+  --color-paper-raised: #ffffff;
+  --color-ink: #1b1d1f;
+  --color-ink-soft: #5b5f63;
+  --color-line: #dedbd3;
+  --color-flow: #2f6f62;
+  --color-flow-soft: #e4eee9;
+  --color-flow-dim: #24564c;
+
+  --font-display: "Fraunces", ui-serif, Georgia, serif;
+  --font-body: "Work Sans", ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background-color: var(--color-flow-soft);
+    color: var(--color-flow-dim);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-flow);
+    outline-offset: 2px;
+  }
+}
