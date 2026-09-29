@@ -32,15 +32,15 @@ export function Signup() {
     }
   }
 
-  return <AuthFormLayout title="Criar conta">
-    <form onSubmit={submit} className="flex flex-col gap-4">
-      <label className="flex flex-col gap-1 text-sm">Nome<input className="rounded-lg border border-line bg-paper-raised p-3" autoComplete="name" required value={fullName} onChange={event => setFullName(event.target.value)} /></label>
-      <label className="flex flex-col gap-1 text-sm">Email<input className="rounded-lg border border-line bg-paper-raised p-3" type="email" autoComplete="email" required value={email} onChange={event => setEmail(event.target.value)} /></label>
-      <label className="flex flex-col gap-1 text-sm">Senha<input className="rounded-lg border border-line bg-paper-raised p-3" type="password" autoComplete="new-password" minLength={6} required value={password} onChange={event => setPassword(event.target.value)} /></label>
-      {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
-      {message && <p role="status" className="text-sm text-flow-dim">{message}</p>}
-      <button className="rounded-lg bg-flow p-3 font-medium text-white disabled:opacity-50" disabled={loading}>{loading ? 'Criando...' : 'Criar conta'}</button>
+  return <AuthFormLayout title="Crie sua conta">
+    <form onSubmit={submit} className="flex flex-col gap-5">
+      <label className="sf-label">Nome<input className="sf-input" autoComplete="name" placeholder="Como podemos chamar você?" required value={fullName} onChange={event => setFullName(event.target.value)} /></label>
+      <label className="sf-label">Email<input className="sf-input" type="email" autoComplete="email" placeholder="seu@email.com" required value={email} onChange={event => setEmail(event.target.value)} /></label>
+      <label className="sf-label">Senha<input className="sf-input" type="password" autoComplete="new-password" minLength={6} placeholder="Crie uma senha" required value={password} onChange={event => setPassword(event.target.value)} /></label>
+      {error && <p role="alert" className="sf-alert-error">{error}</p>}
+      {message && <p role="status" className="sf-alert-success">{message}</p>}
+      <button className="sf-button w-full" disabled={loading}>{loading ? 'Criando...' : 'Criar minha conta'}</button>
     </form>
-    <p className="mt-5 text-sm">Já tem conta? <Link className="text-flow-dim underline" to="/login">Entrar</Link></p>
+    <p className="mt-7 text-center text-sm text-text-secondary">Já tem conta? <Link className="sf-link font-bold" to="/login">Entrar</Link></p>
   </AuthFormLayout>
 }

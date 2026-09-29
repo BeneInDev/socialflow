@@ -28,15 +28,14 @@ export function Login() {
     }
   }
 
-  return <AuthFormLayout title="Entrar">
-    <form onSubmit={submit} className="flex flex-col gap-4">
-      <label className="flex flex-col gap-1 text-sm">Email<input className="rounded-lg border border-line bg-paper-raised p-3" type="email" autoComplete="email" required value={email} onChange={event => setEmail(event.target.value)} /></label>
-      <label className="flex flex-col gap-1 text-sm">Senha<input className="rounded-lg border border-line bg-paper-raised p-3" type="password" autoComplete="current-password" required value={password} onChange={event => setPassword(event.target.value)} /></label>
-      {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
-      <button className="rounded-lg bg-flow p-3 font-medium text-white disabled:opacity-50" disabled={loading}>{loading ? 'Entrando...' : 'Entrar'}</button>
+  return <AuthFormLayout title="Bem-vindo de volta">
+    <form onSubmit={submit} className="flex flex-col gap-5">
+      <label className="sf-label">Email<input className="sf-input" type="email" autoComplete="email" placeholder="seu@email.com" required value={email} onChange={event => setEmail(event.target.value)} /></label>
+      <label className="sf-label">Senha<input className="sf-input" type="password" autoComplete="current-password" placeholder="Sua senha" required value={password} onChange={event => setPassword(event.target.value)} /></label>
+      <Link className="sf-link -mt-1 self-end text-sm font-bold" to="/forgot-password">Esqueci minha senha</Link>
+      {error && <p role="alert" className="sf-alert-error">{error}</p>}
+      <button className="sf-button w-full" disabled={loading}>{loading ? 'Entrando...' : 'Entrar na minha conta'}</button>
     </form>
-    <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm text-flow-dim">
-      <Link to="/forgot-password">Esqueci minha senha</Link><Link to="/signup">Criar conta</Link>
-    </div>
+    <p className="mt-7 text-center text-sm text-text-secondary">Ainda não tem conta? <Link className="sf-link font-bold" to="/signup">Criar conta</Link></p>
   </AuthFormLayout>
 }

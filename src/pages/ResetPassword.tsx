@@ -37,12 +37,12 @@ export function ResetPassword() {
     }
   }
 
-  return <AuthFormLayout title="Definir nova senha">
-    {sessionLoading ? <p role="status">Verificando link...</p> : done ? <p role="status">Senha atualizada. Redirecionando para o dashboard...</p> : linkError ? <p role="alert">Link inválido ou expirado: {linkError}. <Link className="text-flow-dim underline" to="/forgot-password">Solicite outro link.</Link></p> : !session ? <p>Link inválido ou expirado. <Link className="text-flow-dim underline" to="/forgot-password">Solicite outro link.</Link></p> :
-      <form onSubmit={submit} className="flex flex-col gap-4">
-        <label className="flex flex-col gap-1 text-sm">Nova senha<input className="rounded-lg border border-line bg-paper-raised p-3" type="password" autoComplete="new-password" minLength={6} required value={password} onChange={event => setPassword(event.target.value)} /></label>
-        {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
-        <button className="rounded-lg bg-flow p-3 font-medium text-white disabled:opacity-50" disabled={loading}>{loading ? 'Salvando...' : 'Salvar senha'}</button>
+  return <AuthFormLayout title="Defina uma nova senha">
+    {sessionLoading ? <p role="status" className="text-sm text-text-secondary">Verificando link...</p> : done ? <p role="status" className="sf-alert-success">Senha atualizada. Redirecionando para o dashboard...</p> : linkError ? <p role="alert" className="sf-alert-error">Link inválido ou expirado: {linkError}. <Link className="sf-link underline" to="/forgot-password">Solicite outro link.</Link></p> : !session ? <p className="sf-alert-error">Link inválido ou expirado. <Link className="sf-link underline" to="/forgot-password">Solicite outro link.</Link></p> :
+      <form onSubmit={submit} className="flex flex-col gap-5">
+        <label className="sf-label">Nova senha<input className="sf-input" type="password" autoComplete="new-password" minLength={6} required value={password} onChange={event => setPassword(event.target.value)} /></label>
+        {error && <p role="alert" className="sf-alert-error">{error}</p>}
+        <button className="sf-button w-full" disabled={loading}>{loading ? 'Salvando...' : 'Salvar nova senha'}</button>
       </form>}
   </AuthFormLayout>
 }
