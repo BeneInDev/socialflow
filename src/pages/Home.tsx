@@ -1,5 +1,6 @@
 import { Logo } from '../components/Logo'
 import { StatusCard } from '../components/StatusCard'
+import { Link } from 'react-router-dom'
 
 export function Home() {
   return (
@@ -22,9 +23,14 @@ export function Home() {
 
         <div className="mt-10">
           <StatusCard
-            milestone="Marco 1 — Fundação concluída"
-            detail="estrutura do projeto no ar, pronta para os próximos marcos."
+            milestone="Autenticação preparada"
+            detail="entre ou crie uma conta para acessar sua área."
           />
+        </div>
+        <div className="mt-6 flex flex-wrap gap-4 text-sm text-flow-dim">
+          <Link className="underline" to="/login">Entrar</Link>
+          <Link className="underline" to="/signup">Criar conta</Link>
+          <Link className="underline" to="/dashboard">Dashboard</Link>
         </div>
       </main>
 

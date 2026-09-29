@@ -1,107 +1,44 @@
-# SocialFlow
+﻿# SocialFlow
 
-SocialFlow é uma plataforma própria para organizar, agendar e — futuramente —
-publicar conteúdo em redes sociais. A ideia é reunir num só lugar a criação
-de conteúdo (imagens, vídeos, título, legenda, hashtags), a escolha de quais
-redes recebem cada publicação, o agendamento de datas e horários, o
-acompanhamento do status de cada post e um calendário de conteúdos — com
-apoio de IA para criação/adaptação de conteúdo em uma etapa futura.
+Aplicação React, TypeScript, Vite e Tailwind CSS. O marco atual oferece cadastro, login, recuperação de senha, sessão persistente e um dashboard protegido usando Supabase Auth e uma tabela de perfis. A página inicial continua pública.
 
-As integrações previstas são **Instagram, Facebook, YouTube e TikTok**.
-Nenhuma delas está implementada ainda — veja [Roadmap](#roadmap).
-
-## Status deste marco — Marco 1: Fundação
-
-Este marco entrega apenas a fundação técnica do projeto: uma aplicação React
-limpa, organizada, responsiva e compilando sem erros, com uma tela inicial
-simples confirmando que o sistema está de pé. Não há login, banco de dados,
-upload de arquivos, agendamento, integrações externas ou IA neste marco —
-essas funcionalidades chegam em marcos posteriores.
-
-## Tecnologias
-
-- [React 19](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/)
-- [Vite](https://vite.dev/) — build e dev server
-- [Tailwind CSS v4](https://tailwindcss.com/) — estilização utilitária, via o
-  plugin oficial `@tailwindcss/vite` (sem arquivo `tailwind.config` separado;
-  os tokens de design vivem em `src/index.css`)
-
-## Estrutura do projeto
-
-```
-socialflow/
-├── src/
-│   ├── components/  # Componentes reutilizáveis (Logo, StatusCard, ...)
-│   ├── layouts/     # Estruturas de layout compartilhadas (MainLayout)
-│   ├── pages/       # Páginas (Home)
-│   ├── hooks/       # Hooks personalizados (vazio por enquanto)
-│   ├── lib/         # Configurações e clientes de bibliotecas (vazio por enquanto)
-│   ├── services/    # Comunicação com APIs/serviços externos (vazio por enquanto)
-│   ├── types/       # Tipos TypeScript compartilhados (vazio por enquanto)
-│   ├── App.tsx
-│   ├── main.tsx
-│   └── index.css    # Tokens de design (cores, tipografia) + estilos base
-├── public/
-│   └── favicon.svg
-├── .env.example     # Documenta variáveis futuras (Supabase) — sem valores reais
-├── .gitignore
-├── index.html
-├── package.json
-├── tsconfig.json
-├── vite.config.ts
-└── README.md
-```
-
-As pastas `hooks/`, `lib/`, `services/` e `types/` já existem para receber
-código futuro (chamadas ao Supabase, integrações com redes sociais, tipos
-compartilhados), mas estão vazias neste marco — não há implementações falsas
-de API nem simulações de publicação.
-
-## Como instalar
+## Execução local
 
 ```bash
 npm install
 ```
 
-## Como executar em desenvolvimento
+Copie `.env.example` para `.env` e preencha os valores públicos do projeto no painel Supabase (Connect ou Settings > API Keys):
+
+```dotenv
+VITE_SUPABASE_URL=https://seu-projeto.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
+```
+
+Uma chave `anon` legada pode ser fornecida em `VITE_SUPABASE_ANON_KEY` no lugar da publishable key. Variáveis `VITE_` ficam visíveis no navegador: nunca use `service_role`, `sb_secret_` ou senha do banco nelas. O `.env` é ignorado pelo Git.
 
 ```bash
 npm run dev
-```
-
-Abre o servidor de desenvolvimento (por padrão em `http://localhost:5173`).
-O `vite.config.ts` já está configurado com `host: true`, então também é
-possível acessar pela rede local (útil para testar no celular ou em ambientes
-como GitHub Codespaces).
-
-## Como gerar o build de produção
-
-```bash
 npm run build
+npm run lint
 ```
 
-Gera os arquivos otimizados em `dist/`. Para conferir o resultado localmente:
+Se as variáveis estiverem ausentes, a interface mostra uma mensagem de configuração pendente. O Vite precisa ser reiniciado após alterar `.env`.
 
-```bash
-npm run preview
-```
+## Configuração do Supabase
 
-## Variáveis de ambiente
+1. Revise e execute `supabase/migrations/20260928000000_create_profiles.sql` no SQL Editor do projeto (ou aplique a migration pelo Supabase CLI). **Não execute a mesma migration duas vezes.** Ela cria a tabela `profiles`, políticas RLS e gatilhos para criar o perfil após o cadastro e atualizar `updated_at`. Ela não preenche usuários que já existiam antes da execução.
+2. Em Authentication > Providers > Email, habilite cadastro por email. A confirmação de email pode ficar ativada; nesse caso, o cadastro aguarda confirmação antes do primeiro login.
+3. Em Authentication > URL Configuration, defina a Site URL para a URL pública do Netlify. Inclua em Redirect URLs os destinos de recuperação `https://SEU-SITE.netlify.app/reset-password` e, para desenvolvimento, `http://localhost:5173/reset-password`. Se usar domínio próprio, adicione também a URL correspondente. Adicione a origem local usada para confirmação de cadastro quando necessário.
+4. Configure `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY` nas variáveis de ambiente do site no Netlify e publique uma nova versão. São valores públicos do cliente, mas mantenha qualquer chave administrativa fora do site.
 
-Nenhuma variável é usada neste marco. `.env.example` documenta o que será
-necessário quando o Supabase for integrado (`VITE_SUPABASE_URL`,
-`VITE_SUPABASE_ANON_KEY`). Nunca commite um arquivo `.env` real — ele já está
-listado no `.gitignore`.
+O arquivo `public/_redirects` é copiado para `dist/` e faz URLs como `/login`, `/reset-password` e `/dashboard` carregarem a aplicação ao abrir diretamente ou atualizar a página no Netlify. O dashboard consulta somente o perfil do usuário autenticado; a proteção efetiva dos dados é feita pelo RLS no banco.
 
-## Roadmap
+## Rotas
 
-O projeto avança por marcos. Este README será atualizado a cada um.
+- `/`: apresentação pública.
+- `/login`, `/signup`, `/forgot-password`: autenticação.
+- `/reset-password`: definição de nova senha após o link por email.
+- `/dashboard`: área protegida com email, nome do perfil e logout.
 
-- ✅ **Marco 1 — Fundação**: estrutura do projeto, tela inicial, build limpo.
-- ⏳ **Marco 2 (sugestão)**: autenticação e Supabase (definição do schema
-  inicial de usuários).
-
-Funcionalidades como upload de mídia, agendamento, calendário funcional,
-publicação automática, integrações com Instagram/Facebook/YouTube/TikTok, IA
-e notificações serão tratadas em marcos futuros e definidas antes de cada
-implementação.
+Integrações com redes sociais, conteúdo, agendamento, calendário, publicação, analytics e IA ainda não estão implementados.
