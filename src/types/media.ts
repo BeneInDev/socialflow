@@ -14,3 +14,4 @@ export type Media = {
 }
 
 export type CreatedMedia = Pick<Media, 'id' | 'storage_path'>
+export type MediaListItem = Pick<Media, 'id' | 'file_name' | 'mime_type' | 'file_size' | 'status' | 'created_at'>

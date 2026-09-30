@@ -1,6 +1,6 @@
 import { getSupabase } from '../lib/supabase'
 import { validateVideoFile } from '../lib/mediaValidation'
-import type { CreatedMedia } from '../types/media'
+import type { CreatedMedia, MediaListItem } from '../types/media'
 
 function errorMessage(cause: unknown): string {
   return cause instanceof Error ? cause.message : 'Erro desconhecido.'
@@ -73,4 +73,34 @@ export async function uploadVideo(file: File): Promise<CreatedMedia> {
   }
 
   return media
+}
+
+export async function listMedia(): Promise<MediaListItem[]> {
+  const { data, error } = await getSupabase().from('media')
+    .select('id, file_name, mime_type, file_size, status, created_at')
+    .order('created_at', { ascending: false })
+  if (error) throw new Error(`Não foi possível carregar a biblioteca: ${error.message}`)
+  return (data ?? []) as MediaListItem[]
+}
+
+export async function createMediaPreviewUrl(mediaId: string): Promise<string> {
+  const supabase = getSupabase()
+  const { data: media, error: mediaError } = await supabase.from('media')
+    .select('storage_path, status')
+    .eq('id', mediaId)
+    .single()
+
+  if (mediaError || !media) {
+    throw new Error('Não foi possível acessar este vídeo. Atualize a biblioteca e tente novamente.')
+  }
+  if (media.status !== 'ready' || !media.storage_path) {
+    throw new Error('Este vídeo ainda não está disponível para reprodução.')
+  }
+
+  const { data, error } = await supabase.storage.from('media')
+    .createSignedUrl(media.storage_path, 600)
+  if (error || !data?.signedUrl) {
+    throw new Error(`Não foi possível preparar o vídeo: ${error?.message ?? 'link temporário indisponível.'}`)
+  }
+  return data.signedUrl
 }
