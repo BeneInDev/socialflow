@@ -30,7 +30,16 @@ function formatUploadDate(value: string): string {
     : new Intl.DateTimeFormat('pt-BR', { dateStyle: 'medium' }).format(date)
 }
 
-export function MediaCard({ media, onPreview }: { media: MediaListItem; onPreview: (media: MediaListItem) => void }) {
+type Props = {
+  media: MediaListItem
+  onPreview: (media: MediaListItem) => void
+  onDelete: (media: MediaListItem) => void
+  actionsDisabled: boolean
+  deleteDisabled: boolean
+  deleting: boolean
+}
+
+export function MediaCard({ media, onPreview, onDelete, actionsDisabled, deleteDisabled, deleting }: Props) {
   return <article className="sf-card sf-card-interactive flex min-w-0 flex-col overflow-hidden">
     <div className="flex h-40 items-center justify-center border-b border-border bg-gradient-to-br from-[#112b4c] via-[#0d203b] to-[#0b2d39] text-accent" aria-hidden="true">
       <Icon name="video" className="h-12 w-12 opacity-75" />
@@ -45,9 +54,15 @@ export function MediaCard({ media, onPreview }: { media: MediaListItem; onPrevie
         <div><dt className="text-text-secondary">Tamanho</dt><dd className="mt-1 font-semibold text-text-primary">{formatFileSize(media.file_size)}</dd></div>
         <div className="col-span-2"><dt className="text-text-secondary">Enviado em</dt><dd className="mt-1 font-semibold text-text-primary">{formatUploadDate(media.created_at)}</dd></div>
       </dl>
-      {media.status === 'ready'
-        ? <button type="button" onClick={() => onPreview(media)} className="sf-button-secondary mt-6 w-full"><Icon name="video" className="h-4 w-4" /> Visualizar vídeo</button>
-        : <p className="mt-6 border-t border-border pt-4 text-xs text-text-secondary">{media.status === 'uploading' ? 'O vídeo ainda está sendo enviado.' : 'Este vídeo não está disponível para reprodução.'}</p>}
+      {media.status !== 'ready' && <p className="mt-5 border-t border-border pt-4 text-xs leading-5 text-text-secondary">
+        {media.status === 'uploading'
+          ? 'Envio ainda não concluído. Se foi interrompido, você pode remover este registro.'
+          : 'Remova este registro e selecione o arquivo original para enviar novamente.'}
+      </p>}
+      <div className="mt-auto flex flex-col gap-2 pt-5">
+        {media.status === 'ready' && <button type="button" disabled={actionsDisabled} onClick={() => onPreview(media)} className="sf-button-secondary w-full disabled:cursor-not-allowed disabled:opacity-50"><Icon name="video" className="h-4 w-4" />Visualizar vídeo</button>}
+        <button type="button" disabled={actionsDisabled || deleteDisabled} onClick={() => onDelete(media)} className="min-h-11 w-full rounded-xl border border-error/25 px-4 py-2 text-sm font-bold text-error/85 transition-colors duration-200 hover:border-error/40 hover:bg-error/10 hover:text-error disabled:cursor-not-allowed disabled:opacity-50">{deleting ? 'Excluindo...' : 'Excluir'}</button>
+      </div>
     </div>
   </article>
 }

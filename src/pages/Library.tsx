@@ -1,17 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ChangeEvent, FormEvent } from 'react'
 import { Icon } from '../components/Icon'
+import { MediaDeleteDialog } from '../components/MediaDeleteDialog'
 import { MediaCard } from '../components/MediaCard'
 import { MediaPreviewDialog } from '../components/MediaPreviewDialog'
 import { formatFileSize } from '../lib/formatFileSize'
 import { validateVideoFile, videoAccept } from '../lib/mediaValidation'
-import { createMediaPreviewUrl, listMedia, uploadVideo } from '../services/media'
+import { createMediaPreviewUrl, deleteMedia, listMedia, uploadVideo } from '../services/media'
 import type { MediaListItem } from '../types/media'
 
 export function Library() {
   const inputRef = useRef<HTMLInputElement>(null)
   const listRequest = useRef(0)
   const previewRequest = useRef(0)
+  const uploadingRef = useRef(false)
+  const deletingIdRef = useRef<string | null>(null)
   const [file, setFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
@@ -23,6 +26,10 @@ export function Library() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [previewLoading, setPreviewLoading] = useState(false)
   const [previewError, setPreviewError] = useState('')
+  const [deleteTarget, setDeleteTarget] = useState<MediaListItem | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [deleteError, setDeleteError] = useState('')
+  const [deleteNotice, setDeleteNotice] = useState('')
   const validationError = file ? validateVideoFile(file) : null
 
   const loadMedia = useCallback(async () => {
@@ -60,8 +67,10 @@ export function Library() {
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!file || uploading || validationError) return
+    if (!file || uploadingRef.current || deletingIdRef.current || deleteTarget || validationError) return
+    uploadingRef.current = true
     setUploading(true)
+    setDeleteNotice('')
     setError('')
     setSuccess('')
     try {
@@ -70,15 +79,58 @@ export function Library() {
       setFile(null)
       if (inputRef.current) inputRef.current.value = ''
       void loadMedia()
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Não foi possível enviar o vídeo.')
+    } catch {
+      setError('Não foi possível concluir o envio. Confira a lista antes de tentar novamente; se houver um registro pendente, remova-o e selecione o arquivo outra vez.')
+      void loadMedia()
     } finally {
+      uploadingRef.current = false
       setUploading(false)
     }
   }
 
+  function requestDelete(media: MediaListItem) {
+    if (uploadingRef.current || deletingIdRef.current || deleteTarget) return
+    closePreview()
+    setDeleteNotice('')
+    setDeleteError('')
+    setDeleteTarget(media)
+  }
+
+  function cancelDelete() {
+    if (deletingIdRef.current) return
+    setDeleteTarget(null)
+    setDeleteError('')
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget || deletingIdRef.current || uploadingRef.current) return
+    const target = deleteTarget
+    deletingIdRef.current = target.id
+    setDeletingId(target.id)
+    setDeleteError('')
+    try {
+      const result = await deleteMedia(target.id)
+      listRequest.current++
+      setItems(current => current.filter(item => item.id !== target.id))
+      setListLoading(false)
+      setListError('')
+      if (previewMedia?.id === target.id) closePreview()
+      setDeleteTarget(null)
+      setDeleteNotice(result.fileAlreadyMissing
+        ? 'Registro removido. O arquivo já não estava no armazenamento.'
+        : 'Vídeo excluído da biblioteca.')
+      void loadMedia()
+    } catch (cause) {
+      setDeleteError(cause instanceof Error ? cause.message : 'Não foi possível concluir a exclusão. Atualize a biblioteca e tente novamente.')
+      void loadMedia()
+    } finally {
+      deletingIdRef.current = null
+      setDeletingId(null)
+    }
+  }
+
   function openPreview(media: MediaListItem) {
-    if (media.status !== 'ready') return
+    if (media.status !== 'ready' || deletingIdRef.current || deleteTarget) return
     const request = ++previewRequest.current
     setPreviewMedia(media)
     setPreviewUrl(null)
@@ -119,7 +171,7 @@ export function Library() {
           <div><h2 id="upload-title" className="font-bold">Enviar vídeo</h2><p className="text-xs text-text-secondary">O arquivo será salvo na sua biblioteca privada.</p></div>
         </div>
         <form onSubmit={submit}>
-          <input ref={inputRef} id="video-file" className="peer sr-only" type="file" accept={videoAccept} onChange={selectFile} disabled={uploading} aria-describedby="video-help" />
+          <input ref={inputRef} id="video-file" className="peer sr-only" type="file" accept={videoAccept} onChange={selectFile} disabled={uploading || deletingId !== null || deleteTarget !== null} aria-describedby="video-help" />
           <label htmlFor="video-file" className={`flex min-h-64 flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border bg-[#0b1629] px-5 py-10 text-center transition-colors duration-200 peer-focus-visible:border-accent peer-focus-visible:ring-2 peer-focus-visible:ring-accent/30 ${uploading ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:border-primary hover:bg-surface-hover'}`}>
             <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/15 text-[#8fc3ff]"><Icon name="video" className="h-8 w-8" /></span>
             <span className="mt-5 text-base font-extrabold text-text-primary">{file ? 'Trocar vídeo' : 'Selecione um vídeo'}</span>
@@ -134,7 +186,7 @@ export function Library() {
           {uploading && <p role="status" className="mt-4 flex items-center gap-2 text-sm text-text-secondary"><span className="h-2 w-2 animate-pulse rounded-full bg-accent" /> Enviando vídeo e salvando o registro...</p>}
           {error && <p role="alert" className="sf-alert-error mt-4">{error}</p>}
           {success && <p role="status" className="sf-alert-success mt-4"><Icon name="check" className="mr-2 inline h-4 w-4" />{success}</p>}
-          <button className="sf-button mt-6 w-full sm:w-auto" type="submit" disabled={!file || !!validationError || uploading}><Icon name="upload" />{uploading ? 'Enviando...' : 'Enviar vídeo'}</button>
+          <button className="sf-button mt-6 w-full sm:w-auto" type="submit" disabled={!file || !!validationError || uploading || deletingId !== null || deleteTarget !== null}><Icon name="upload" />{uploading ? 'Enviando...' : 'Enviar vídeo'}</button>
         </form>
       </section>
 
@@ -152,8 +204,9 @@ export function Library() {
     <section className="mt-12" aria-labelledby="media-list-title">
       <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
         <div><h2 id="media-list-title" className="font-display text-xl font-extrabold">Seus vídeos</h2><p className="mt-1 text-sm text-text-secondary">Arquivos disponíveis na sua biblioteca.</p></div>
-        <button type="button" onClick={() => void loadMedia()} disabled={listLoading} className="sf-button-secondary text-sm disabled:opacity-50">{listLoading ? 'Atualizando...' : 'Atualizar lista'}</button>
+        <button type="button" onClick={() => void loadMedia()} disabled={listLoading || deletingId !== null} className="sf-button-secondary text-sm disabled:opacity-50">{listLoading ? 'Atualizando...' : 'Atualizar lista'}</button>
       </div>
+      {deleteNotice && <p role="status" className="sf-alert-success mb-5">{deleteNotice}</p>}
       {listLoading && <p role="status" className="flex items-center gap-3 py-8 text-sm text-text-secondary"><span className="h-2.5 w-2.5 animate-pulse rounded-full bg-accent" />Carregando biblioteca...</p>}
       {listError && <div role="alert" className="sf-alert-error"><p>{listError}</p><button type="button" onClick={() => void loadMedia()} className="mt-2 font-bold underline">Tentar novamente</button></div>}
       {!listLoading && !listError && items.length === 0 && <div className="sf-card flex flex-col items-center px-6 py-12 text-center">
@@ -163,10 +216,11 @@ export function Library() {
         <button type="button" onClick={() => inputRef.current?.click()} className="sf-button mt-6"><Icon name="upload" className="h-4 w-4" />Selecionar primeiro vídeo</button>
       </div>}
       {items.length > 0 && <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-3">
-        {items.map(media => <MediaCard key={media.id} media={media} onPreview={openPreview} />)}
+        {items.map(media => <MediaCard key={media.id} media={media} onPreview={openPreview} onDelete={requestDelete} actionsDisabled={deletingId !== null} deleteDisabled={uploading} deleting={deletingId === media.id} />)}
       </div>}
     </section>
 
     {previewMedia && <MediaPreviewDialog key={previewMedia.id} media={previewMedia} signedUrl={previewUrl} loading={previewLoading} error={previewError} onClose={closePreview} />}
+    {deleteTarget && <MediaDeleteDialog key={deleteTarget.id} media={deleteTarget} busy={deletingId !== null} error={deleteError} onCancel={cancelDelete} onConfirm={() => void confirmDelete()} />}
   </main>
 }
